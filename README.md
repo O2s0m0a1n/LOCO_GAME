@@ -1,101 +1,189 @@
-# LOCO — لعبة إكس أو أونلاين
+#LOCO — Online Tic-Tac-Toe
 
-مشروع Flask + Flask-SocketIO + Bootstrap 5 + JavaScript عادي (بدون React/Vue).
-**DESIGNED BY EL-GRINGO**
+### A real-time multiplayer Tic-Tac-Toe game built with Flask, Flask-SocketIO, Bootstrap 5, and vanilla JavaScript (no React or Vue).
 
-## المميزات
+#DESIGNED BY EL-GRINGO
 
-- لعب جماعي فوري (غرفة لكل لاعبين، والسيرفر هو الذي يتحقق من كل حركة)
-- تصميم LOCO: وضع داكن/فاتح، عربي/إنجليزي مع RTL/LTR، متجاوب مع كل الشاشات
-- موسيقى خلفية + مؤثرات صوتية اختيارية + التحكم في الصوت
-- دردشة نصية فورية (لوحة جانبية على الكمبيوتر، ونافذة سفلية Offcanvas على الجوال)
-- دردشة صوتية اختيارية عبر WebRTC (الصوت مباشر بين اللاعبَين، والسيرفر للإشارات فقط)
-
-## هيكل المشروع
-
-```
+Features
+Real-time multiplayer gameplay with two players per room.
+Server-side validation of all game moves.
+LOCO custom interface with Dark and Light themes.
+Arabic and English language support with RTL/LTR layouts.
+Responsive design for desktop, tablet, and mobile devices.
+Optional background music and sound effects with audio controls.
+Real-time text chat:
+Side panel on desktop.
+Bottom Offcanvas chat window on mobile.
+Optional WebRTC voice chat:
+Direct audio communication between the two players.
+The server handles signaling only.
+Start, accept, reject, and end voice calls.
+Microphone and speaker mute controls.
+Connection status indicators.
+Project Structure
+text
 mywebsite/
-├── app.py                 السيرفر (الغرف، الحركات، الدردشة، إشارات الصوت)
+├── app.py                 # Server: rooms, moves, chat, voice signaling
 ├── requirements.txt
-├── templates/index.html   الصفحة الوحيدة
+├── templates/
+│   └── index.html         # Main application page
 └── static/
-    ├── css/style.css
-    ├── js/app.js          الترجمة، المظهر، اللغة، الصوت
-    ├── js/game.js         الاتصال، اللوبي، اللوحة
-    ├── js/chat.js         الدردشة النصية
-    ├── js/voice.js        الدردشة الصوتية (WebRTC)
-    └── audio/             background.mp3 / click.mp3 / win.mp3
-```
+    ├── css/
+    │   └── style.css
+    ├── js/
+    │   ├── app.js         # Translations, themes, language, audio
+    │   ├── game.js        # Connection, lobby, game board
+    │   ├── chat.js        # Text chat
+    │   └── voice.js       # WebRTC voice chat
+    └── audio/
+        ├── background.mp3
+        ├── click.mp3
+        └── win.mp3
 
-## التشغيل
+Installation and Setup
+1. Download the Project
 
-```bash
+Download and extract LOCO-complete.zip.
+
+Open the extracted project folder:
+
+bash
 cd mywebsite
+
+2. Create a Virtual Environment
+bash
 python -m venv venv
-venv\Scripts\activate          # ويندوز  (لينكس/ماك: source venv/bin/activate)
+
+
+Activate the virtual environment:
+
+Windows:
+
+powershell
+venv\Scripts\activate
+
+
+Linux / macOS:
+
+bash
+source venv/bin/activate
+
+3. Install Dependencies
+bash
 pip install -r requirements.txt
+
+4. Start the Application
+bash
 python app.py
-```
 
-افتح: http://localhost:5000
+5. Open the Game
 
-للتجربة بين متصفحين: افتح نافذتين (أو نافذة عادية ونافذة تصفح خفي)، أنشئ غرفة في الأولى وانضم بنفس الرمز في الثانية.
+Visit:
 
-## الدردشة الصوتية: HTTPS و TURN
+http://localhost:5000
 
-**1) HTTPS مطلوب.** المتصفحات لا تسمح بالميكروفون إلا في `https://` أو `localhost`.
-لذلك على نفس الجهاز يعمل كل شيء عبر `localhost`، لكن من جهاز آخر عبر `http://192.168.x.x:5000` لن يعمل الميكروفون (وسيظهر في اللعبة تنبيه واضح، واللعب والدردشة النصية يستمران).
-حلول: نشر الموقع خلف HTTPS (الأفضل)، أو استخدام نفق مثل Cloudflare Tunnel / ngrok للتجربة، أو:
+Testing Multiplayer
 
-```bash
+To test the game with two players:
+
+Open the application in one browser.
+Create a new game room.
+Open another browser or an incognito window.
+Join using the same room code.
+Start playing!
+Voice Chat: HTTPS and TURN Configuration
+1. HTTPS Requirement
+
+Modern browsers require HTTPS for microphone access, except when using localhost.
+
+http://localhost:5000 — Microphone access is allowed.
+http://192.168.x.x:5000 — Microphone access is generally blocked.
+https://your-domain.com — Microphone access is allowed.
+
+If microphone access is unavailable, the game and text chat will continue working normally.
+
+Recommended solutions:
+
+Deploy the application behind HTTPS.
+Use Cloudflare Tunnel or ngrok for testing.
+Configure a local SSL certificate.
+
+Example:
+
+bash
 LOCO_SSL_CERT=cert.pem LOCO_SSL_KEY=key.pem python app.py
-```
 
-**2) STUN وحده لا يكفي دائماً.** بعض الشبكات (خصوصاً شبكات الجوال والشبكات المقيِّدة) تمنع الاتصال المباشر،
-ولذلك يلزم سيرفر **TURN** حتى يعمل الصوت بين أي شبكتين. اضبطه بمتغيرات البيئة (لا تكتب كلمات السر داخل الكود):
+2. STUN and TURN Servers
 
-| المتغير | المعنى | مثال |
-|---|---|---|
-| `LOCO_STUN_URLS` | سيرفرات STUN (بفاصلة) | `stun:stun.l.google.com:19302` (الافتراضي) |
-| `LOCO_TURN_URLS` | سيرفرات TURN (بفاصلة) | `turn:turn.example.com:3478,turns:turn.example.com:5349` |
-| `LOCO_TURN_USERNAME` | اسم مستخدم TURN | `loco` |
-| `LOCO_TURN_CREDENTIAL` | كلمة سر TURN | `********` |
+STUN servers help WebRTC discover public network addresses.
 
-ويندوز (PowerShell):
+However, STUN alone may not work on every network. A TURN server may be necessary when players are connected through different networks, especially mobile networks or restricted connections.
 
-```powershell
+Configure these environment variables:
+
+Variable	Description	Example
+LOCO_STUN_URLS	Comma-separated STUN server URLs	stun:stun.l.google.com:19302
+LOCO_TURN_URLS	Comma-separated TURN server URLs	turn:turn.example.com:3478,turns:turn.example.com:5349
+LOCO_TURN_USERNAME	TURN username	loco
+LOCO_TURN_CREDENTIAL	TURN password	********
+Windows PowerShell Example
+powershell
 $env:LOCO_TURN_URLS="turn:turn.example.com:3478"
 $env:LOCO_TURN_USERNAME="loco"
-$env:LOCO_TURN_CREDENTIAL="كلمة-السر"
+$env:LOCO_TURN_CREDENTIAL="your-strong-password"
+
 python app.py
-```
 
-نموذج إعداد **coturn** على سيرفر لينكس (ملف `/etc/turnserver.conf`):
+Example coturn Configuration
 
-```
+On a Linux server, install coturn and configure /etc/turnserver.conf:
+
+ini
 listening-port=3478
 tls-listening-port=5349
 fingerprint
 lt-cred-mech
-user=loco:كلمة-سر-قوية
+user=loco:your-strong-password
 realm=turn.example.com
 cert=/etc/letsencrypt/live/turn.example.com/fullchain.pem
 pkey=/etc/letsencrypt/live/turn.example.com/privkey.pem
 min-port=49152
 max-port=65535
 no-cli
-```
 
-افتح في الجدار الناري: `3478` (UDP+TCP) و`5349` (TCP) والنطاق `49152-65535` (UDP).
 
-> كلمة سر TURN تصل إلى متصفح اللاعبَين داخل الغرفة (هذا طبيعي في WebRTC)، فاستخدم حساباً مخصصاً لهذا الغرض فقط.
+Configure your firewall to allow:
 
-## النشر (Production)
+Port 3478 — UDP and TCP.
+Port 5349 — TCP.
+Ports 49152-65535 — UDP.
 
-- شغّل بدون وضع التطوير: `LOCO_DEBUG=0`، وضع مفتاحاً سرياً ثابتاً: `LOCO_SECRET_KEY=...`
-- ضع التطبيق خلف Nginx/Caddy مع HTTPS. إعداد Nginx للـ WebSocket:
+Security Note: TURN credentials are provided to players' browsers for WebRTC connections. Use dedicated credentials for this purpose only.
 
-```nginx
+Production Deployment
+
+For production environments:
+
+1. Disable Debug Mode
+
+Set:
+
+bash
+LOCO_DEBUG=0
+LOCO_SECRET_KEY=your-long-random-secret-key
+
+
+Never publish your production secret key.
+
+2. Use HTTPS
+
+Deploy the application behind Nginx or Caddy with a valid SSL certificate.
+
+3. Nginx WebSocket Configuration
+
+Example configuration:
+
+nginx
 location / {
     proxy_pass http://127.0.0.1:5000;
     proxy_http_version 1.1;
@@ -104,22 +192,85 @@ location / {
     proxy_set_header Host $host;
     proxy_set_header X-Forwarded-Proto $scheme;
 }
-```
 
-- الغرف محفوظة في ذاكرة العملية، لذلك استخدم **عملية واحدة (worker واحد)**. مثال حسب توثيق Flask-SocketIO (وضع threading): `pip install gunicorn` ثم
-  `gunicorn --threads 100 -w 1 app:app`
-- ملفات Bootstrap وSocket.IO تُحمَّل من CDN. لتشغيل بلا إنترنت نزّلها داخل `static/` وغيّر الروابط في `index.html` (و`BS_LTR`/`BS_RTL` في `app.js`).
+4. Run with Gunicorn
 
-## حدود وإعدادات الدردشة (في `app.py`)
+The game rooms are stored in application memory, so use a single worker process.
 
-`CHAT_MAX_LENGTH = 200` حرف، `CHAT_RATE_LIMIT = 5` رسائل كل `CHAT_RATE_WINDOW = 5` ثوانٍ.
-الرسائل تُعرض كنص فقط (`textContent`) فلا يمكن حقن HTML.
+Install Gunicorn:
 
-## قائمة اختبار سريعة
+bash
+pip install gunicorn
 
-1. لاعبان في متصفحين: لعبة كاملة (فوز، تعادل، إعادة لعب، العودة للوبي).
-2. دردشة من الطرفين بالعربي والإنجليزي، ورسالة `<b>test</b>` يجب أن تظهر كنص.
-3. عرض الجوال: لا تمرير أفقي، زر الدردشة يفتح النافذة السفلية.
-4. تبديل اللغة والمظهر ثم تحديث الصفحة: الاختيار يُحفظ.
-5. الصوت: مكالمة، قبول/رفض، كتم الميكروفون والسماعة، إنهاء المكالمة، وإغلاق أحد اللاعبين للصفحة أثناء المكالمة.
-6. المكالمة بين شبكتين مختلفتين (مثلاً واي فاي وبيانات الجوال) تحتاج TURN مضبوطاً.
+
+Run:
+
+bash
+gunicorn --threads 100 -w 1 app:app
+
+
+Make sure the deployment configuration is compatible with Flask-SocketIO and its selected async mode.
+
+5. External Resources
+
+Bootstrap and Socket.IO client libraries are loaded from CDNs.
+
+For offline deployment:
+
+Download the required libraries.
+Place them inside the static/ directory.
+Update the references in templates/index.html.
+Update the Bootstrap LTR/RTL stylesheet paths in app.js.
+Chat Limits and Security
+
+The following settings are defined in app.py:
+
+Setting	Default
+CHAT_MAX_LENGTH	200 characters
+CHAT_RATE_LIMIT	5 messages
+CHAT_RATE_WINDOW	5 seconds
+
+Chat messages are rendered using JavaScript textContent instead of HTML rendering to prevent HTML injection through messages.
+
+Quick Testing Checklist
+
+Before deployment, test the following:
+
+Multiplayer Gameplay
+Two players in separate browsers.
+Complete games.
+Win and draw conditions.
+Restarting games.
+Returning to the lobby.
+Text Chat
+Send messages from both players.
+Test Arabic and English messages.
+Test <b>test</b> and verify that it appears as plain text.
+Mobile Compatibility
+Check the layout on mobile devices.
+Ensure there is no horizontal scrolling.
+Verify that the chat button opens the bottom Offcanvas window.
+Themes and Languages
+Switch between Dark and Light modes.
+Switch between Arabic and English.
+Refresh the page and verify that preferences are saved.
+Voice Chat
+Start and accept calls.
+Reject incoming calls.
+Mute and unmute the microphone.
+Mute and unmute the speaker.
+End calls.
+Close one player's browser during a call.
+Different Networks
+Test a connection between Wi-Fi and mobile data.
+Configure a TURN server if direct connections fail.
+Known Limitations
+Microphone access requires HTTPS outside localhost.
+WebRTC connections may fail on restricted networks without a TURN server.
+Voice chat is optional; gameplay and text chat should continue working without it.
+Real-device and cross-browser testing is recommended before production deployment.
+Credits
+
+Designed and developed by EL-GRINGO.
+
+LOCO — Play Together. Stay Connected.
