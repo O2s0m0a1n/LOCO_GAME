@@ -111,6 +111,12 @@
                             <i class="bi bi-box-arrow-in-right me-2"></i><span data-i18n="joinRoom"></span>
                         </button>
                     </form>
+
+                    <div class="divider-text my-3"><span data-i18n="or"></span></div>
+
+                    <button id="botBtn" type="button" class="btn btn-bot btn-lg w-100">
+                        <i class="bi bi-robot me-2"></i><span data-i18n="playBot"></span>
+                    </button>
                 </div>
             </div>
         </section>
@@ -123,7 +129,8 @@
                     <div class="loco-card p-3 p-md-4">
 
                         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-                            <div class="d-flex align-items-center gap-2">
+                            <span class="bot-only fw-semibold"><i class="bi bi-robot me-2"></i><span data-i18n="vsComputer"></span></span>
+                            <div class="online-only d-flex align-items-center gap-2">
                                 <span class="text-body-secondary small" data-i18n="roomCode"></span>
                                 <span id="roomCode" class="room-code"></span>
                                 <button id="copyRoom" type="button" class="icon-btn icon-btn-sm"
@@ -131,7 +138,7 @@
                                     <i class="bi bi-clipboard"></i>
                                 </button>
                             </div>
-                            <span class="conn-badge"><span class="conn-dot" data-state="connecting"></span><span class="conn-text small"></span></span>
+                            <span class="conn-badge online-only"><span class="conn-dot" data-state="connecting"></span><span class="conn-text small"></span></span>
                         </div>
 
                         <div class="row g-2 mb-3">
@@ -148,6 +155,11 @@
                         </div>
 
                         <div id="status" class="status text-center" role="status" aria-live="polite"></div>
+                        <div class="text-center mb-3 d-none" id="botInsteadWrap">
+                            <button id="botInsteadBtn" type="button" class="btn btn-bot btn-sm">
+                                <i class="bi bi-robot me-1"></i><span data-i18n="botInstead"></span>
+                            </button>
+                        </div>
 
                         <div class="board-wrap">
                             <div id="board" class="board">
@@ -171,7 +183,7 @@
                                 <i class="bi bi-house-door me-1"></i><span data-i18n="backToLobby"></span>
                             </button>
                             <!-- Mobile / tablet only: opens the chat offcanvas -->
-                            <button id="chatOpenBtn" type="button" class="btn btn-loco-outline w-100 d-lg-none"
+                            <button id="chatOpenBtn" type="button" class="btn btn-loco-outline w-100 d-lg-none online-only"
                                     data-bs-toggle="offcanvas" data-bs-target="#chatOffcanvas"
                                     aria-controls="chatOffcanvas">
                                 <i class="bi bi-chat-dots-fill me-1"></i><span data-i18n="chat"></span>
@@ -180,7 +192,7 @@
                         </div>
 
                         <!-- Optional voice chat (WebRTC) -->
-                        <div id="voiceBar" class="voice-bar mt-3">
+                        <div id="voiceBar" class="voice-bar online-only mt-3">
                             <div class="d-flex align-items-center gap-2 mb-2">
                                 <i class="bi bi-mic-fill text-body-secondary"></i>
                                 <span class="fw-semibold" data-i18n="voice"></span>
@@ -209,7 +221,7 @@
                 </div>
 
                 <!-- Desktop chat column (the chat panel moves into the offcanvas on small screens) -->
-                <div class="col-12 col-lg-5 col-xl-4 d-none d-lg-block">
+                <div class="col-12 col-lg-5 col-xl-4 d-none d-lg-block online-only">
                     <div id="chatDesktopSlot" class="loco-card chat-slot">
 
                         <div id="chatPanel" class="chat-panel">
@@ -281,6 +293,80 @@
     </div>
 </div>
 
+<!-- Play vs computer -->
+<div class="modal fade" id="botModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content loco-modal">
+            <div class="modal-body p-4">
+                <div class="text-center mb-3">
+                    <div class="result-emoji"><i class="bi bi-robot"></i></div>
+                    <h2 class="h4 mt-2" data-i18n="botTitle"></h2>
+                    <p class="text-body-secondary mb-0" data-i18n="botSubtitle"></p>
+                </div>
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn level-btn" data-level="easy">
+                        <span class="fw-bold" data-i18n="levelEasy"></span>
+                        <small class="d-block text-body-secondary" data-i18n="levelEasyDesc"></small>
+                    </button>
+                    <button type="button" class="btn level-btn" data-level="medium">
+                        <span class="fw-bold" data-i18n="levelMedium"></span>
+                        <small class="d-block text-body-secondary" data-i18n="levelMediumDesc"></small>
+                    </button>
+                    <button type="button" class="btn level-btn" data-level="hard">
+                        <span class="fw-bold" data-i18n="levelHard"></span>
+                        <small class="d-block text-body-secondary" data-i18n="levelHardDesc"></small>
+                    </button>
+                    <button type="button" class="btn btn-link text-body-secondary" data-bs-dismiss="modal">
+                        <span data-i18n="cancel"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation (restart / leave) -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content loco-modal text-center">
+            <div class="modal-body p-4">
+                <div class="result-emoji"><i class="bi bi-exclamation-triangle-fill text-warning"></i></div>
+                <h2 id="confirmTitle" class="h5 mt-3"></h2>
+                <p id="confirmText" class="text-body-secondary"></p>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-loco-outline flex-fill" data-bs-dismiss="modal">
+                        <span data-i18n="cancel"></span>
+                    </button>
+                    <button id="confirmOk" type="button" class="btn btn-loco flex-fill">
+                        <span data-i18n="confirmYes"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Opponent asks to restart -->
+<div class="modal fade" id="restartModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content loco-modal text-center">
+            <div class="modal-body p-4">
+                <div class="result-emoji"><i class="bi bi-arrow-repeat text-info"></i></div>
+                <h2 class="h5 mt-3" data-i18n="restartIncomingTitle"></h2>
+                <p class="text-body-secondary" data-i18n="restartIncomingText"></p>
+                <div class="d-flex gap-2">
+                    <button id="restartDecline" type="button" class="btn btn-danger flex-fill">
+                        <span data-i18n="decline"></span>
+                    </button>
+                    <button id="restartAccept" type="button" class="btn btn-success flex-fill">
+                        <span data-i18n="accept"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Incoming voice call -->
 <div class="modal fade" id="callModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-dialog-centered modal-sm">
@@ -312,6 +398,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
 <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script src="{{ url_for('static', filename='js/bot.js') }}"></script>
 <script src="{{ url_for('static', filename='js/game.js') }}"></script>
 <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
 <script src="{{ url_for('static', filename='js/voice.js') }}"></script>

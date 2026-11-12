@@ -1,6 +1,9 @@
+import json
 import os
 import secrets
 import time
+import urllib.parse
+import urllib.request
 from collections import deque
 
 from flask import Flask, render_template, request
@@ -57,6 +60,7 @@ def player_role(room, sid):
 
 
 def reset_board(room):
+    room.pop("restart", None)
     room["board"] = [""] * 9
     room["turn"] = "X"
     room["winner"] = None
@@ -234,25 +238,62 @@ def handle_move(data):
     update_room(code)
 
 
-@socketio.on("restart_game")
-def handle_restart():
+# ---------- Restart needs the opponent's consent ----------
+RESTART_TTL = 30.0         # seconds a restart request stays valid
+RESTART_MIN_GAP = 3.0      # seconds between requests from the same player
+restart_times = {}         # sid -> time of last request
+
+
+@socketio.on("restart_request")
+def handle_restart_request(data=None):
     sid = request.sid
     code = sid_rooms.get(sid)
+    room = rooms.get(code) if code else None
 
-    if not code or code not in rooms:
+    if not room or sid not in room["players"] or len(room["players"]) != 2:
         return
 
-    room = rooms[code]
-
-    if sid not in room["players"]:
+    # Nothing to restart on an empty board
+    if all(cell == "" for cell in room["board"]):
         return
 
-    if len(room["players"]) != 2:
+    now = time.monotonic()
+    pending = room.get("restart")
+    if pending and now - pending["at"] < RESTART_TTL:
         return
 
-    reset_board(room)
+    if now - restart_times.get(sid, -RESTART_MIN_GAP) < RESTART_MIN_GAP:
+        return
+    restart_times[sid] = now
 
-    update_room(code)
+    room["restart"] = {"by": sid, "at": now}
+    socketio.emit("restart_requested", {}, to=other_player(room, sid))
+
+
+@socketio.on("restart_response")
+def handle_restart_response(data):
+    sid = request.sid
+    code = sid_rooms.get(sid)
+    room = rooms.get(code) if code else None
+
+    if not room or sid not in room["players"] or not isinstance(data, dict):
+        return
+
+    pending = room.get("restart")
+    if not pending or pending["by"] == sid:
+        return                       # only the OTHER player may answer
+    if time.monotonic() - pending["at"] >= RESTART_TTL:
+        room.pop("restart", None)
+        return
+
+    requester = pending["by"]
+    room.pop("restart", None)
+
+    if data.get("accept") is True:
+        reset_board(room)
+        update_room(code)
+    else:
+        socketio.emit("restart_declined", {}, to=requester)
 
 
 # ---- Voice chat (Phase Two) ----
@@ -267,13 +308,89 @@ SIGNAL_RATE_WINDOW = 10.0  # ... per this many seconds
 signal_times = {}          # sid -> deque of recent signaling times
 
 
+ICE_CACHE_SECONDS = 3000      # managed TURN credentials are valid for 24 h
+ICE_RETRY_SECONDS = 30        # after a provider error, try again soon
+_ice_cache = {"servers": None, "until": 0.0}
+
+
+def _get_json(req, timeout=3):
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+
+def fetch_cloudflare_turn():
+    """Cloudflare Realtime TURN: short-lived credentials minted by the server."""
+    key_id = os.environ.get("LOCO_CF_TURN_KEY_ID", "").strip()
+    token = os.environ.get("LOCO_CF_TURN_API_TOKEN", "").strip()
+    if not key_id or not token:
+        return []
+
+    req = urllib.request.Request(
+        "https://rtc.live.cloudflare.com/v1/turn/keys/%s/credentials/generate-ice-servers"
+        % urllib.parse.quote(key_id, safe=""),
+        data=json.dumps({"ttl": 86400}).encode("utf-8"),
+        headers={"Authorization": "Bearer " + token, "Content-Type": "application/json"},
+        method="POST"
+    )
+    data = _get_json(req)
+
+    servers = data.get("iceServers") if isinstance(data, dict) else None
+    if isinstance(servers, dict):
+        servers = [servers]
+
+    clean = []
+    for entry in servers or []:
+        urls = entry.get("urls")
+        if isinstance(urls, str):
+            urls = [urls]
+        # Browsers block port 53, so skip those URLs
+        urls = [u for u in (urls or []) if isinstance(u, str) and ":53" not in u]
+        if not urls:
+            continue
+        item = {"urls": urls}
+        if entry.get("username"):
+            item["username"] = entry["username"]
+            item["credential"] = entry.get("credential", "")
+        clean.append(item)
+    return clean
+
+
+def fetch_metered_turn():
+    """Metered.ca TURN: the API key stays on the server."""
+    domain = os.environ.get("LOCO_METERED_DOMAIN", "").strip()
+    api_key = os.environ.get("LOCO_METERED_API_KEY", "").strip()
+    if not domain or not api_key:
+        return []
+
+    domain = domain.replace("https://", "").replace("http://", "").strip("/")
+    url = "https://%s/api/v1/turn/credentials?apiKey=%s" % (domain, urllib.parse.quote(api_key, safe=""))
+    data = _get_json(urllib.request.Request(url))
+
+    return [e for e in data if isinstance(e, dict) and e.get("urls")] if isinstance(data, list) else []
+
+
 def ice_servers():
-    stun = os.environ.get("LOCO_STUN_URLS", "stun:stun.l.google.com:19302")
+    now = time.monotonic()
+    if _ice_cache["servers"] is not None and now < _ice_cache["until"]:
+        return _ice_cache["servers"]
+
+    stun = os.environ.get(
+        "LOCO_STUN_URLS",
+        "stun:stun.l.google.com:19302,stun:stun.cloudflare.com:3478"
+    )
     servers = []
 
     stun_urls = [u.strip() for u in stun.split(",") if u.strip()]
     if stun_urls:
         servers.append({"urls": stun_urls})
+
+    failed = False
+    for fetcher in (fetch_cloudflare_turn, fetch_metered_turn):
+        try:
+            servers.extend(fetcher())
+        except Exception as exc:       # network error, bad key, ...
+            failed = True
+            app.logger.warning("TURN provider %s failed: %s", fetcher.__name__, exc)
 
     turn_urls = [u.strip() for u in os.environ.get("LOCO_TURN_URLS", "").split(",") if u.strip()]
     if turn_urls:
@@ -283,7 +400,19 @@ def ice_servers():
             "credential": os.environ.get("LOCO_TURN_CREDENTIAL", "")
         })
 
+    _ice_cache["servers"] = servers
+    _ice_cache["until"] = now + (ICE_RETRY_SECONDS if failed else ICE_CACHE_SECONDS)
     return servers
+
+
+def has_turn(servers):
+    for entry in servers:
+        urls = entry.get("urls", [])
+        if isinstance(urls, str):
+            urls = [urls]
+        if any(u.startswith(("turn:", "turns:")) for u in urls):
+            return True
+    return False
 
 
 def other_player(room, sid):
@@ -382,7 +511,8 @@ def handle_voice_config(data=None):
     ctx = voice_context(request.sid)
     if not ctx:
         return {"ok": False}
-    return {"ok": True, "iceServers": ice_servers()}
+    servers = ice_servers()
+    return {"ok": True, "iceServers": servers, "hasTurn": has_turn(servers)}
 
 
 @socketio.on("voice_invite")
@@ -505,6 +635,7 @@ def handle_disconnect():
     code = sid_rooms.pop(sid, None)
     chat_times.pop(sid, None)
     signal_times.pop(sid, None)
+    restart_times.pop(sid, None)
 
     if not code or code not in rooms:
         return

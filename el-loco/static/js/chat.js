@@ -111,8 +111,40 @@
 
         if (mine || nearBottom) list.scrollTop = list.scrollHeight;
 
-        if (!mine && !desktop.matches && !offcanvasOpen) setUnread(unread + 1);
+        if (!mine) notifyIncoming(msg);
     }
+
+    // ---------- Incoming message: sound + light notification ----------
+    const baseTitle = document.title;
+    let titleCount = 0;
+
+    function notifyIncoming(msg) {
+        L.sfx('message');                                    // respects mute / sound-effects switch
+
+        const chatVisible = desktop.matches || offcanvasOpen;
+
+        if (!chatVisible) {
+            setUnread(unread + 1);
+            const preview = msg.text.length > 40 ? msg.text.slice(0, 40) + '…' : msg.text;
+            // Tapping the notification opens the chat
+            L.toast(L.t('newMessage') + ' — ' + preview, 'info', () => {
+                bootstrap.Offcanvas.getOrCreateInstance(offcanvasEl).show();
+            });
+        } else if (desktop.matches) {
+            panel.classList.remove('flash');                 // restart the highlight animation
+            void panel.offsetWidth;
+            panel.classList.add('flash');
+        }
+
+        if (document.hidden) {                               // another tab is in front
+            titleCount++;
+            document.title = '(' + titleCount + ') ' + L.t('newMessage');
+        }
+    }
+
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) { titleCount = 0; document.title = L.t('siteTitle') || baseTitle; }
+    });
 
     function reset() {
         Array.from(list.querySelectorAll('.msg')).forEach((el) => el.remove());

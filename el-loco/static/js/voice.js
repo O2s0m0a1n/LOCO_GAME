@@ -39,6 +39,7 @@
     let token = 0;                // bumps on every reset: cancels async work that is still in flight
     let ringTimer = null;
     let discTimer = null;
+    let hasTurn = true;           // does the server offer a TURN relay? (reported by the server)
 
     // ---------- UI ----------
     function show(node, on) { node.classList.toggle('d-none', !on); }
@@ -121,7 +122,8 @@
     }
 
     function fail(messageKey) {
-        L.toast(L.t(messageKey || 'voiceFailed'), 'danger');
+        const key = (!messageKey || messageKey === 'voiceFailed') && !hasTurn ? 'voiceNeedTurn' : (messageKey || 'voiceFailed');
+        L.toast(L.t(key), 'danger');
         socket.emit('voice_end');
         reset();
     }
@@ -155,11 +157,12 @@
     function getIceServers() {
         return new Promise((resolve) => {
             let done = false;
-            const timer = setTimeout(() => { if (!done) { done = true; resolve(FALLBACK_ICE); } }, 4000);
+            const timer = setTimeout(() => { if (!done) { done = true; resolve(FALLBACK_ICE); } }, 9000);
             socket.emit('voice_config', {}, (res) => {
                 if (done) return;
                 done = true;
                 clearTimeout(timer);
+                hasTurn = !!(res && res.hasTurn);
                 resolve(res && res.ok && Array.isArray(res.iceServers) ? res.iceServers : FALLBACK_ICE);
             });
         });
@@ -376,6 +379,6 @@
     document.addEventListener('loco:lang', render);
     window.addEventListener('pagehide', () => { stopStream(stream); });
 
-    L.voice = { reset: reset };
+    L.voice = { reset: reset, active: () => state !== 'idle' };
     render();
 })();

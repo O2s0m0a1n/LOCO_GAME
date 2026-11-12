@@ -112,7 +112,40 @@
             micMute: 'Mute microphone',
             micUnmute: 'Unmute microphone',
             spkMute: 'Mute speaker',
-            spkUnmute: 'Unmute speaker'
+            spkUnmute: 'Unmute speaker',
+
+            playBot: 'Play vs Computer',
+            botTitle: 'Play vs Computer',
+            botSubtitle: 'Choose a difficulty. You play X and move first.',
+            levelEasy: 'Easy',
+            levelEasyDesc: 'Relaxed — makes random moves',
+            levelMedium: 'Medium',
+            levelMediumDesc: 'Blocks and wins when it can',
+            levelHard: 'Hard',
+            levelHardDesc: 'Unbeatable — the best you can do is a draw',
+            computer: 'Computer',
+            vsComputer: 'vs Computer',
+            statusBotTurn: '🤖 Computer is thinking…',
+            botInstead: 'Nobody here yet? Play vs the computer',
+            cancel: 'Cancel',
+            accept: 'Accept',
+            decline: 'Decline',
+
+            confirmYes: 'Yes, continue',
+            confirmRestartTitle: 'Restart the game?',
+            confirmRestartText: 'The current game progress will be lost.',
+            confirmRestartOnline: 'The current game progress will be lost, and your opponent must accept the request.',
+            confirmLeaveTitle: 'Leave the game?',
+            confirmLeaveText: 'You will lose the current game progress.',
+            confirmLeaveOnline: 'You will lose the current game progress and your opponent will be disconnected.',
+            restartSent: 'Request sent — waiting for your opponent…',
+            restartIncomingTitle: 'Restart request',
+            restartIncomingText: 'Your opponent wants to restart the game. Accept?',
+            restartDeclined: 'Your opponent declined the restart',
+            restartDone: 'The game was restarted',
+
+            newMessage: '💬 New message',
+            voiceNeedTurn: 'The voice connection failed. Players on different networks need a TURN server — see the setup guide.'
         },
         ar: {
             siteTitle: 'LOCO — إكس أو أونلاين',
@@ -205,7 +238,40 @@
             micMute: 'كتم الميكروفون',
             micUnmute: 'تشغيل الميكروفون',
             spkMute: 'كتم السماعة',
-            spkUnmute: 'تشغيل السماعة'
+            spkUnmute: 'تشغيل السماعة',
+
+            playBot: 'العب ضد الكمبيوتر',
+            botTitle: 'العب ضد الكمبيوتر',
+            botSubtitle: 'اختر مستوى الصعوبة. أنت تلعب بـ X وتبدأ أولاً.',
+            levelEasy: 'سهل',
+            levelEasyDesc: 'مريح — حركاته عشوائية',
+            levelMedium: 'متوسط',
+            levelMediumDesc: 'يسدّ عليك ويفوز عندما يستطيع',
+            levelHard: 'صعب',
+            levelHardDesc: 'لا يُهزم — أفضل ما تحققه هو التعادل',
+            computer: 'الكمبيوتر',
+            vsComputer: 'ضد الكمبيوتر',
+            statusBotTurn: '🤖 الكمبيوتر يفكّر…',
+            botInstead: 'لا أحد هنا بعد؟ العب ضد الكمبيوتر',
+            cancel: 'إلغاء',
+            accept: 'موافقة',
+            decline: 'رفض',
+
+            confirmYes: 'نعم، متابعة',
+            confirmRestartTitle: 'إعادة اللعبة؟',
+            confirmRestartText: 'ستفقد تقدّمك في اللعبة الحالية.',
+            confirmRestartOnline: 'ستفقد تقدّم اللعبة الحالية، ويجب أن يوافق خصمك على الطلب.',
+            confirmLeaveTitle: 'مغادرة اللعبة؟',
+            confirmLeaveText: 'ستفقد تقدّمك في اللعبة الحالية.',
+            confirmLeaveOnline: 'ستفقد تقدّم اللعبة الحالية وسيُفصل خصمك عن اللعبة.',
+            restartSent: 'تم إرسال الطلب — بانتظار خصمك…',
+            restartIncomingTitle: 'طلب إعادة اللعبة',
+            restartIncomingText: 'خصمك يريد إعادة اللعبة. هل توافق؟',
+            restartDeclined: 'رفض خصمك إعادة اللعبة',
+            restartDone: 'تمت إعادة اللعبة',
+
+            newMessage: '💬 رسالة جديدة',
+            voiceNeedTurn: 'فشل الاتصال الصوتي. اللاعبون على شبكات مختلفة يحتاجون إلى سيرفر TURN — راجع دليل الإعداد.'
         }
     };
 
@@ -226,10 +292,12 @@
 
     // ---------- Toast ----------
     let toastInstance = null;
-    LOCO.toast = function (message, type) {
+    LOCO.toast = function (message, type, onClick) {
         const el = $('appToast');
         $('toastBody').textContent = message;
         el.className = 'toast border-0 toast-' + (type || 'info');
+        el.style.cursor = onClick ? 'pointer' : '';
+        el.onclick = onClick ? () => { toastInstance.hide(); onClick(); } : null;
         if (!toastInstance) toastInstance = bootstrap.Toast.getOrCreateInstance(el, { delay: 2600 });
         toastInstance.show();
     };
@@ -419,7 +487,8 @@
         click: ['click.mp3', 1],
         move: ['click.mp3', 1.25],
         win: ['win.mp3', 1],
-        draw: ['click.mp3', 0.7]
+        draw: ['click.mp3', 0.7],
+        message: ['message.mp3', 1]
     };
     const sfxCache = {};
 
