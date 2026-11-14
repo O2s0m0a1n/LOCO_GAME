@@ -19,6 +19,8 @@
     const desktopSlot = $('chatDesktopSlot');
     const mobileSlot = $('chatOffcanvasBody');
     const offcanvasEl = $('chatOffcanvas');
+    const emojiBtn = $('emojiBtn');
+    const emojiPanel = $('emojiPanel');
 
     const MAX_NODES = 100;       // keep the DOM small in long games
     const MIN_GAP_MS = 400;      // client-side throttle (the server enforces the real limit)
@@ -150,6 +152,7 @@
         Array.from(list.querySelectorAll('.msg')).forEach((el) => el.remove());
         empty.classList.remove('d-none');
         input.value = '';
+        closeEmoji();
         setUnread(0);
     }
 
@@ -158,8 +161,56 @@
     // ---------- Sending ----------
     function updateSendState() {
         sendBtn.disabled = !socket.connected;
+        emojiBtn.disabled = !socket.connected;
         input.disabled = !socket.connected;
+        if (!socket.connected) closeEmoji();
     }
+
+    // ---------- Emoji picker: tap an emoji to add it to the message, then press Send ----------
+    const EMOJIS = ['😀', '😂', '🤣', '😍', '😎', '🥳', '😉', '🙂',
+        '😅', '😭', '😡', '😱', '🤔', '🙄', '😴', '🤗',
+        '😜', '🥲', '😤', '🤯', '🫡', '🤝', '👍', '👎',
+        '👏', '🙌', '💪', '🙏', '👀', '👋', '✌️', '🤞',
+        '🔥', '🎉', '🏆', '💯', '✨', '🍀', '❤️', '💔',
+        '😈', '👑', '⏳', '⚡', '🎯', '🤡', '🥱', '😏'];
+    const finePointer = window.matchMedia && matchMedia('(pointer: fine)').matches;
+
+    EMOJIS.forEach((e) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'emoji';
+        b.textContent = e;
+        emojiPanel.appendChild(b);
+    });
+
+    function closeEmoji() {
+        emojiPanel.classList.add('d-none');
+        emojiBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    function insertEmoji(emoji) {
+        const start = input.selectionStart == null ? input.value.length : input.selectionStart;
+        const end = input.selectionEnd == null ? start : input.selectionEnd;
+        const next = input.value.slice(0, start) + emoji + input.value.slice(end);
+        if (Array.from(next).length > 200) return;          // same limit as the server
+        input.value = next;
+        const pos = start + emoji.length;
+        input.setSelectionRange(pos, pos);
+        if (finePointer) input.focus();                      // on phones do not pop the keyboard up
+    }
+
+    emojiBtn.addEventListener('click', () => {
+        const open = emojiPanel.classList.toggle('d-none') === false;
+        emojiBtn.setAttribute('aria-expanded', String(open));
+    });
+    emojiPanel.addEventListener('click', (e) => {
+        const b = e.target.closest('.emoji');
+        if (b) insertEmoji(b.textContent);
+    });
+    document.addEventListener('click', (e) => {
+        if (!emojiPanel.classList.contains('d-none') && !e.target.closest('#emojiPanel') && !e.target.closest('#emojiBtn')) closeEmoji();
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeEmoji(); });
 
     form.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -176,8 +227,9 @@
         if (now - lastSend < MIN_GAP_MS) return;
         lastSend = now;
 
-        socket.emit('chat_message', { text: text.slice(0, 200) });
+        socket.emit('chat_message', { text: Array.from(text).slice(0, 200).join('') });
         input.value = '';
+        closeEmoji();
         input.focus();
     });
 

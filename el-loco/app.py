@@ -66,6 +66,61 @@ def reset_board(room):
     room["winner"] = None
 
 
+# ---------- Match = a number of rounds (1, 3 or 5) ----------
+ROUNDS_ALLOWED = (1, 3, 5)
+
+
+def reset_match(room, playing=False):
+    """New match: scores to zero. playing=False -> players choose the rounds and press Ready."""
+    room.setdefault("rounds", 1)
+    room["scores"] = {"X": 0, "O": 0}
+    room["round"] = 1
+    room["champion"] = None
+    room["ready"] = set()
+    room["phase"] = "playing" if playing else "setup"
+
+    # The player who opens the match alternates: match 1 -> X (room creator), match 2 -> O, ...
+    # A new pair of players (setup) starts counting again.
+    room["match_no"] = room.get("match_no", 0) + 1 if playing else 0
+    room["starter"] = "O" if (room["match_no"] > 0 and room["match_no"] % 2 == 0) else "X"
+
+    reset_board(room)
+    room["turn"] = room["starter"]
+
+
+def finish_round(room, result):
+    """Called when a round ends ('X', 'O' or 'draw'). Decides: next round or match over."""
+    if result in ("X", "O"):
+        room["scores"][result] += 1
+
+    remaining = room["rounds"] - room["round"]
+    sx, so = room["scores"]["X"], room["scores"]["O"]
+
+    # The match ends after the last round, or earlier when nobody can catch up
+    if remaining <= 0 or sx > so + remaining or so > sx + remaining:
+        room["phase"] = "match_over"
+        room["champion"] = "X" if sx > so else ("O" if so > sx else "draw")
+    else:
+        room["phase"] = "round_over"
+
+
+def nothing_to_restart(room):
+    return (
+        room["phase"] == "setup"
+        or (all(cell == "" for cell in room["board"])
+            and room["scores"]["X"] + room["scores"]["O"] == 0
+            and room["round"] == 1)
+    )
+
+
+def two_player_room(sid):
+    code = sid_rooms.get(sid)
+    room = rooms.get(code) if code else None
+    if not room or sid not in room["players"] or len(room["players"]) != 2:
+        return None, None
+    return room, code
+
+
 def room_data(code):
     room = rooms[code]
 
@@ -76,7 +131,14 @@ def room_data(code):
         "winner": room["winner"],
         "line": winning_line(room["board"]),
         "players": len(room["players"]),
-        "started": len(room["players"]) == 2
+        "started": len(room["players"]) == 2,
+        "phase": room["phase"],
+        "rounds": room["rounds"],
+        "round": room["round"],
+        "scores": dict(room["scores"]),
+        "starter": room["starter"],
+        "champion": room["champion"],
+        "ready": [player_role(room, p) for p in room["players"] if p in room["ready"]]
     }
 
 
@@ -127,6 +189,13 @@ def handle_join(data):
         send_error("invalid_code", "Invalid room code")
         return
 
+    # Only the "Create room" button (create=True) may open a new room.
+    # Typing a wrong code must NOT silently create an empty room.
+    create = data.get("create") is True
+    if code not in rooms and not create:
+        send_error("room_not_found", "Room not found")
+        return
+
     # Leave previous room if necessary
     old_code = sid_rooms.get(sid)
     if old_code and old_code != code:
@@ -139,6 +208,7 @@ def handle_join(data):
             "turn": "X",
             "winner": None
         }
+        reset_match(rooms[code])
 
     room = rooms[code]
 
@@ -171,7 +241,7 @@ def leave_old_room(code):
     if sid in room["players"]:
         end_call(room, notify_sid=other_player(room, sid))
         room["players"].remove(sid)
-        reset_board(room)
+        reset_match(room)
 
     if room["players"]:
         update_room(code, send_roles=True)
@@ -180,7 +250,7 @@ def leave_old_room(code):
 
 
 @socketio.on("leave_game")
-def handle_leave():
+def handle_leave(data=None):
     """Return to lobby without reloading the page (keeps the music playing)."""
     code = sid_rooms.get(request.sid)
 
@@ -201,7 +271,7 @@ def handle_move(data):
     if len(room["players"]) != 2:
         return
 
-    if room["winner"]:
+    if room["winner"] or room.get("phase") != "playing":
         return
 
     if sid not in room["players"]:
@@ -232,10 +302,90 @@ def handle_move(data):
 
     if result:
         room["winner"] = result
+        finish_round(room, result)
     else:
         room["turn"] = "O" if role == "X" else "X"
 
     update_room(code)
+
+
+# ---------- Match setup (rounds), next round, nudge ----------
+NUDGE_GAP = 8.0            # seconds between nudges from the same player
+nudge_times = {}           # sid -> time of last nudge
+
+
+@socketio.on("match_config")
+def handle_match_config(data):
+    """Either player can propose the number of rounds; changing it clears both Ready flags."""
+    room, code = two_player_room(request.sid)
+    if not room or room["phase"] != "setup" or not isinstance(data, dict):
+        return
+
+    rounds = data.get("rounds")
+    if not isinstance(rounds, int) or isinstance(rounds, bool) or rounds not in ROUNDS_ALLOWED:
+        return
+
+    room["rounds"] = rounds
+    room["ready"] = set()
+    update_room(code)
+
+
+@socketio.on("match_ready")
+def handle_match_ready(data=None):
+    """The match starts when both players are Ready with the same number of rounds."""
+    room, code = two_player_room(request.sid)
+    if not room or room["phase"] != "setup":
+        return
+
+    room["ready"].add(request.sid)
+
+    if all(p in room["ready"] for p in room["players"]):
+        reset_match(room, playing=True)
+
+    update_room(code)
+
+
+@socketio.on("next_round")
+def handle_next_round(data=None):
+    """After a round: the winner starts the next one (after a draw the starter swaps)."""
+    room, code = two_player_room(request.sid)
+    if not room or room["phase"] != "round_over":
+        return
+
+    winner = room["winner"]
+    if winner in ("X", "O"):
+        starter = winner
+    else:
+        starter = "O" if room["starter"] == "X" else "X"
+
+    reset_board(room)
+    room["starter"] = starter
+    room["turn"] = starter
+    room["round"] += 1
+    room["phase"] = "playing"
+
+    update_room(code)
+
+
+@socketio.on("nudge")
+def handle_nudge(data=None):
+    """Remind the opponent that it is their turn."""
+    sid = request.sid
+    room, code = two_player_room(sid)
+    if not room or room["phase"] != "playing" or room["winner"]:
+        return
+
+    # Only the player who is WAITING can nudge (it must be the other player's turn)
+    if player_role(room, sid) == room["turn"]:
+        return
+
+    now = time.monotonic()
+    if now - nudge_times.get(sid, -NUDGE_GAP) < NUDGE_GAP:
+        send_error("nudge_wait", "Please wait before nudging again")
+        return
+    nudge_times[sid] = now
+
+    socketio.emit("nudged", {}, to=other_player(room, sid))
 
 
 # ---------- Restart needs the opponent's consent ----------
@@ -253,8 +403,8 @@ def handle_restart_request(data=None):
     if not room or sid not in room["players"] or len(room["players"]) != 2:
         return
 
-    # Nothing to restart on an empty board
-    if all(cell == "" for cell in room["board"]):
+    # Nothing to restart before the match has started
+    if nothing_to_restart(room):
         return
 
     now = time.monotonic()
@@ -290,7 +440,7 @@ def handle_restart_response(data):
     room.pop("restart", None)
 
     if data.get("accept") is True:
-        reset_board(room)
+        reset_match(room, playing=True)       # a new match, same number of rounds
         update_room(code)
     else:
         socketio.emit("restart_declined", {}, to=requester)
@@ -470,7 +620,7 @@ def handle_chat(data):
         return
 
     # Remove control characters, trim, collapse line breaks into spaces
-    text = "".join(ch if ch.isprintable() else " " for ch in text)
+    text = "".join(ch if (ch.isprintable() or ch in ("\u200d", "\ufe0f")) else " " for ch in text)
     text = " ".join(text.split())
 
     if not text:
@@ -636,6 +786,7 @@ def handle_disconnect():
     chat_times.pop(sid, None)
     signal_times.pop(sid, None)
     restart_times.pop(sid, None)
+    nudge_times.pop(sid, None)
 
     if not code or code not in rooms:
         return
@@ -646,7 +797,7 @@ def handle_disconnect():
         end_call(room, notify_sid=other_player(room, sid))
         room["players"].remove(sid)
 
-    reset_board(room)
+    reset_match(room)
 
     update_room(code, send_roles=True)
 

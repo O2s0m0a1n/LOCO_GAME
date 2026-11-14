@@ -67,7 +67,9 @@
             chatEmpty: 'No messages yet. Say hi! 👋',
 
             err_enter_code: 'Enter a room code first',
-            err_invalid_code: 'Invalid room code',
+            err_invalid_code: 'Room code is not valid',
+            err_room_not_found: 'Room code not found or incorrect',
+            emoji: 'Emoji',
             err_room_full: 'This room is full',
             err_not_in_room: 'You are not in a room',
             err_chat_too_long: 'Message is too long',
@@ -86,7 +88,7 @@
             unmute: 'Unmute',
             volume: 'Volume',
             soundEffects: 'Sound effects',
-            musicMissing: 'Music file not found (static/audio/background.mp3)',
+            musicMissing: 'Music file not found (static/audio/)',
 
             voice: 'Voice chat',
             voiceStart: 'Start voice call',
@@ -145,7 +147,46 @@
             restartDone: 'The game was restarted',
 
             newMessage: '💬 New message',
-            voiceNeedTurn: 'The voice connection failed. Players on different networks need a TURN server — see the setup guide.'
+            voiceNeedTurn: 'The voice connection failed. Players on different networks need a TURN server — see the setup guide.',
+
+            musicStyle: 'Music style',
+            nextTrack: 'Next track',
+            trackCalm: 'Calm',
+            trackCalmDesc: 'Relaxing ambient',
+            trackEnergetic: 'Energetic',
+            trackEnergeticDesc: 'Upbeat and lively',
+            trackAdventure: 'Adventure',
+            trackAdventureDesc: 'Epic and heroic',
+
+            roundsTitle: 'Match length',
+            roundsHint: 'Choose the number of rounds. Both players must press Ready.',
+            roundWord: 'Round',
+            roundWordOne: 'round',
+            roundWordMany: 'rounds',
+            ready: 'Ready',
+            setupWaitOpp: 'Waiting for your opponent to press Ready…',
+            setupOppReady: 'Your opponent is ready',
+            statusSetup: '⚙️ Choose the number of rounds',
+            nextRound: 'Next round',
+            statusRoundWon: '🎯 You won the round!',
+            statusRoundLost: '😕 Your opponent won the round',
+            statusRoundDraw: '🤝 Round drawn',
+            roundWinTitle: 'Round won!',
+            roundLoseTitle: 'Round lost',
+            roundDrawTitle: 'Round drawn',
+            roundWinText: 'You take this round.',
+            roundLoseText: 'Win the next one!',
+            roundDrawText: 'No point this time. The starter swaps.',
+            youStartNext: 'You start the next round.',
+            oppStartsNext: 'Your opponent starts the next round.',
+            botStartsNext: 'The computer starts the next round.',
+            scoreLine: 'X {x} : {o} O',
+
+            nudge: 'Nudge',
+            nudgeWait: 'Nudge ({s}s)',
+            nudgeSent: '👋 Nudge sent',
+            nudgeIncoming: '👋 Your opponent is waiting — it’s your turn!',
+            err_nudge_wait: 'Please wait before nudging again'
         },
         ar: {
             siteTitle: 'LOCO — إكس أو أونلاين',
@@ -194,6 +235,8 @@
 
             err_enter_code: 'اكتب رمز الغرفة أولاً',
             err_invalid_code: 'رمز الغرفة غير صالح',
+            err_room_not_found: 'رمز الغرفة غير موجود أو خاطئ',
+            emoji: 'إيموجي',
             err_room_full: 'هذه الغرفة ممتلئة',
             err_not_in_room: 'أنت لست في غرفة',
             err_chat_too_long: 'الرسالة طويلة جداً',
@@ -212,7 +255,7 @@
             unmute: 'إلغاء الكتم',
             volume: 'مستوى الصوت',
             soundEffects: 'المؤثرات الصوتية',
-            musicMissing: 'ملف الموسيقى غير موجود (static/audio/background.mp3)',
+            musicMissing: 'ملف الموسيقى غير موجود (static/audio/)',
 
             voice: 'الدردشة الصوتية',
             voiceStart: 'بدء مكالمة صوتية',
@@ -271,7 +314,46 @@
             restartDone: 'تمت إعادة اللعبة',
 
             newMessage: '💬 رسالة جديدة',
-            voiceNeedTurn: 'فشل الاتصال الصوتي. اللاعبون على شبكات مختلفة يحتاجون إلى سيرفر TURN — راجع دليل الإعداد.'
+            voiceNeedTurn: 'فشل الاتصال الصوتي. اللاعبون على شبكات مختلفة يحتاجون إلى سيرفر TURN — راجع دليل الإعداد.',
+
+            musicStyle: 'نمط الموسيقى',
+            nextTrack: 'المقطع التالي',
+            trackCalm: 'هادئة',
+            trackCalmDesc: 'أجواء مريحة',
+            trackEnergetic: 'حيوية',
+            trackEnergeticDesc: 'شبابية ونشيطة',
+            trackAdventure: 'مغامرات',
+            trackAdventureDesc: 'ملحمية وحماسية',
+
+            roundsTitle: 'عدد الجولات',
+            roundsHint: 'اختر عدد الجولات. يجب أن يضغط اللاعبان على «جاهز».',
+            roundWord: 'الجولة',
+            roundWordOne: 'جولة',
+            roundWordMany: 'جولات',
+            ready: 'جاهز',
+            setupWaitOpp: 'بانتظار ضغط خصمك على «جاهز»…',
+            setupOppReady: 'خصمك جاهز',
+            statusSetup: '⚙️ اختر عدد الجولات',
+            nextRound: 'الجولة التالية',
+            statusRoundWon: '🎯 فزت بالجولة!',
+            statusRoundLost: '😕 فاز خصمك بالجولة',
+            statusRoundDraw: '🤝 تعادل في الجولة',
+            roundWinTitle: 'فزت بالجولة!',
+            roundLoseTitle: 'خسرت الجولة',
+            roundDrawTitle: 'تعادل في الجولة',
+            roundWinText: 'هذه الجولة لك.',
+            roundLoseText: 'فُز بالجولة القادمة!',
+            roundDrawText: 'لا نقطة هذه المرة، ويتبادل اللاعبان البدء.',
+            youStartNext: 'ستبدأ أنت الجولة التالية.',
+            oppStartsNext: 'سيبدأ خصمك الجولة التالية.',
+            botStartsNext: 'سيبدأ الكمبيوتر الجولة التالية.',
+            scoreLine: 'X {x} : {o} O',
+
+            nudge: 'نكز',
+            nudgeWait: 'نكز ({s}ث)',
+            nudgeSent: '👋 تم إرسال النكزة',
+            nudgeIncoming: '👋 خصمك ينتظرك — حان دورك!',
+            err_nudge_wait: 'انتظر قليلاً قبل النكز مرة أخرى'
         }
     };
 
@@ -378,9 +460,18 @@
     const audioBase = document.body.dataset.audioBase || '/static/audio/';
     const clamp01 = (n) => (isNaN(n) ? 0.4 : Math.min(1, Math.max(0, n)));
 
+    // Music styles: files live in static/audio/
+    const TRACKS = [
+        { id: 'calm', file: 'background.mp3' },
+        { id: 'energetic', file: 'music-energetic.mp3' },
+        { id: 'adventure', file: 'music-adventure.mp3' }
+    ];
+    const savedTrack = LS.get('loco_track', 'calm');
+
     const music = {
         el: null,
         broken: false,
+        track: TRACKS.some((x) => x.id === savedTrack) ? savedTrack : 'calm',
         want: LS.get('loco_music', '1') === '1',
         muted: LS.get('loco_muted', '0') === '1',
         vol: clamp01(parseFloat(LS.get('loco_volume', '0.4')))
@@ -401,9 +492,32 @@
             }
             updateSoundUI();
         });
-        a.src = audioBase + 'background.mp3';   // loaded only when music is first needed
+        a.src = audioBase + trackFile(music.track);   // loaded only when music is first needed
         music.el = a;
         return a;
+    }
+
+    function trackFile(id) { return (TRACKS.find((x) => x.id === id) || TRACKS[0]).file; }
+
+    /** Choose a music style; autoplay=true also starts it (user picked it on purpose). */
+    function setTrack(id, autoplay) {
+        if (!TRACKS.some((x) => x.id === id)) return;
+        const changed = id !== music.track;
+        music.track = id;
+        music.broken = false;
+        LS.set('loco_track', id);
+        if (music.el && changed) music.el.src = audioBase + trackFile(id);
+        if (autoplay) {
+            music.want = true;
+            LS.set('loco_music', '1');
+            playMusic();
+        }
+        updateSoundUI();
+    }
+
+    function nextTrack() {
+        const i = TRACKS.findIndex((x) => x.id === music.track);
+        setTrack(TRACKS[(i + 1) % TRACKS.length].id, true);
     }
 
     function applyVolume() {
@@ -455,9 +569,17 @@
             ? 'bi-volume-up-fill' : 'bi-volume-mute-fill');
         $('volumeRange').value = Math.round(music.vol * 100);
         $('sfxSwitch').checked = sfxOn;
+        document.querySelectorAll('.track-btn').forEach((b) => {
+            b.classList.toggle('active', b.dataset.track === music.track);
+        });
     }
 
     $('musicToggle').addEventListener('click', toggleMusic);
+    $('nextTrackBtn').addEventListener('click', nextTrack);
+    $('trackList').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-track]');
+        if (b) setTrack(b.dataset.track, true);
+    });
     $('muteToggle').addEventListener('click', () => setMuted(!(music.muted || music.vol === 0)));
 
     $('volumeRange').addEventListener('input', (e) => {
@@ -488,7 +610,8 @@
         move: ['click.mp3', 1.25],
         win: ['win.mp3', 1],
         draw: ['click.mp3', 0.7],
-        message: ['message.mp3', 1]
+        message: ['message.mp3', 1],
+        nudge: ['nudge.mp3', 1]
     };
     const sfxCache = {};
 
@@ -513,8 +636,18 @@
     // Button click sound (board cells make the "move" sound instead)
     document.addEventListener('click', (e) => {
         const b = e.target.closest('button, .btn');
-        if (b && !b.classList.contains('cell') && !b.closest('.sound-menu')) LOCO.sfx('click');
+        if (b && !b.classList.contains('cell') && !b.closest('.sound-menu') && !b.closest('.emoji-panel')) LOCO.sfx('click');
     });
+
+    // ---------- Lobby logo: your static/logo.png, with the text logo as a safety net ----------
+    const heroLogo = $('heroLogo');
+    const heroText = $('heroLogoText');
+    function heroFallback() {
+        heroLogo.classList.add('d-none');
+        heroText.classList.remove('d-none');
+    }
+    heroLogo.addEventListener('error', heroFallback);
+    if (heroLogo.complete && heroLogo.naturalWidth === 0) heroFallback();
 
     // ---------- Init ----------
     applyTheme(document.documentElement.getAttribute('data-bs-theme') || 'dark', false);
