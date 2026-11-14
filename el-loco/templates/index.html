@@ -107,7 +107,9 @@
         <section id="lobby" class="row justify-content-center">
             <div class="col-12 col-sm-10 col-md-8 col-lg-5 col-xl-4">
                 <div class="loco-card p-4 p-md-5 text-center">
-                    <img id="heroLogo" src="{{ url_for('static', filename='logo.png') }}" alt="LOCO" class="hero-logo mb-3">
+                    <div id="heroLogoWrap" class="hero-logo-wrap mb-3">
+                        <img id="heroLogo" src="{{ url_for('static', filename='logo.png') }}" alt="LOCO" class="hero-logo">
+                    </div>
                     <div id="heroLogoText" class="loco-logo loco-logo-lg mb-3 d-none">LOCO</div>
                     <h1 class="h4 mb-1" data-i18n="welcome"></h1>
                     <p class="text-body-secondary mb-4" data-i18n="welcomeSub"></p>

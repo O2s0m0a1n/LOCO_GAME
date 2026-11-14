@@ -643,7 +643,7 @@
     const heroLogo = $('heroLogo');
     const heroText = $('heroLogoText');
     function heroFallback() {
-        heroLogo.classList.add('d-none');
+        heroLogo.parentElement.classList.add('d-none');   // hide the whole frame, not just the picture
         heroText.classList.remove('d-none');
     }
     heroLogo.addEventListener('error', heroFallback);

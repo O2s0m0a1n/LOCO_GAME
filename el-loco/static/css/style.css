@@ -467,14 +467,33 @@ body::before {
     to { box-shadow: inset 0 0 0 2px transparent; }
 }
 
-/* ---------- Your own logo image on the lobby ---------- */
-.hero-logo {
-    display: block;
-    width: auto;
-    height: auto;
-    max-width: min(100%, 320px);
-    max-height: 170px;
+/* ---------- Your own logo image on the lobby ----------
+   The picture has a black square around the icon. The frame cuts 6% from every side
+   (so no black edge is left) and rounds the corners to match the icon (27%).
+   Tune the three numbers below if you change the picture:
+     --logo-crop  how much to cut from each side
+     --logo-nudge how far the picture moves up (its bottom margin is a bit bigger)
+     --logo-round the corner radius of the frame                                   */
+.hero-logo-wrap {
+    --logo-crop: 0.06;
+    --logo-nudge: 1.136%;
+    --logo-round: 27%;
+    position: relative;
+    width: min(52vw, 190px);
+    aspect-ratio: 1;
     margin-inline: auto;
+    overflow: hidden;
+    border-radius: var(--logo-round);
+    background: #0b1020;
+    box-shadow: 0 14px 34px -10px rgba(112, 69, 216, .55), 0 0 0 1px rgba(255, 255, 255, .06);
+}
+.hero-logo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: translateY(calc(var(--logo-nudge) * -1)) scale(calc(1 / (1 - 2 * var(--logo-crop))));
 }
 
 /* ---------- Music style picker ---------- */
